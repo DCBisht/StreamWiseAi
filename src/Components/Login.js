@@ -7,15 +7,15 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { auth } from "../Utils/firebase";
-import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../Utils/userSlice";
 const Login = () => {
-  const navigate=useNavigate();
   const [isSignInForm, setIsSignInForm] = useState(true);
   const email = useRef(null);
   const password = useRef(null);
   const name = useRef(null);
   const [errorMessage, setErrorMessage] = useState();
-
+  const dispatch = useDispatch();
   const toggleSignUP = () => {
     setIsSignInForm(!isSignInForm);
   };
@@ -36,23 +36,34 @@ const Login = () => {
             // Signed up
             const user = userCredential.user;
             console.log(user);
-            updateProfile(user, {
-              displayName: name, photoURL: "https://avatars.githubusercontent.com/u/65598930?v=4"
-            }).then(() => {
-              navigate("/browse");
-            }).catch((error) => {
-              setErrorMessage(error.message);
-            });
-            // ...
+            console.log(auth.currentUser);
+            console.log(name.current.value);
+            updateProfile( auth.currentUser, {
+              displayName: name.current.value,
+              photoURL: "https://avatars.githubusercontent.com/u/65598930?v=4",
+            })
+              .then(() => {
+                const { uid, email, displayName, photoURL } = auth.currentUser;
+                dispatch(
+                  addUser({
+                    uid: uid,
+                    email: email,
+                    userName: displayName,
+                    photoURL: photoURL,
+                  })
+                );
+              })
+              .catch((error) => {
+                console.log(error);
+                setErrorMessage(error.message);
+              });
           })
           .catch((error) => {
             const errorMessage = error.message;
             setErrorMessage(errorMessage);
-            // ..
           });
       }
-    } 
-    else {
+    } else {
       const message = checkValidData(
         email.current.value,
         password.current.value
@@ -66,8 +77,8 @@ const Login = () => {
         )
           .then((userCredential) => {
             const user = userCredential.user;
+            console.log(user);
             console.log("User signIn ho gya bhai!!!");
-            navigate("/browse");
           })
           .catch((error) => {
             const errorMessage = error.message;
@@ -80,12 +91,9 @@ const Login = () => {
     <div>
       <Header />
       <div className="absolute">
-        <img src="https://assets.nflxext.com/ffe/siteui/vlv3/563192ea-ac0e-4906-a865-ba9899ffafad/6b2842d1-2339-4f08-84f6-148e9fcbe01b/IN-en-20231218-popsignuptwoweeks-perspective_alpha_website_small.jpg" />
+        <img src="https://assets.nflxext.com/ffe/siteui/vlv3/563192ea-ac0e-4906-a865-ba9899ffafad/6b2842d1-2339-4f08-84f6-148e9fcbe01b/IN-en-20231218-popsignuptwoweeks-perspective_alpha_website_small.jpg" alt=""/>
       </div>
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        className=" bg-opacity-80 absolute rounded-lg p-14 bg-black w-4/12 my-36 mx-auto right-0 left-0 text-white"
-      >
+      <div className=" bg-opacity-80 absolute rounded-lg p-14 bg-black w-4/12 my-36 mx-auto right-0 left-0 text-white">
         <h1 className=" font-bold text-3xl p-2 mb-6">
           {" "}
           {isSignInForm ? "Sign In" : "Sign Up"}{" "}
@@ -124,7 +132,7 @@ const Login = () => {
             ? "New to platform? Sign Up Now"
             : "Already a user? Sign In"}
         </p>
-      </form>
+      </div>
     </div>
   );
 };
